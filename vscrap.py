@@ -19,17 +19,11 @@ class VacancyScrap():
 
     def search_gt_salary(self, salary):
         objects = self.collection.find({'salary_max': {'$gt': salary}})
-        result = []
-        for obj in objects:
-            result.append(obj)
-        return result 
+        return list(objects) 
             
     def search_empty_salary(self):
         objects = self.collection.find({'salary_max': None, 'salary_min': None})
-        result = []
-        for obj in objects:
-            result.append(obj)
-        return result 
+        return list(objects) 
             
     def search_and_write_job(self, vacancy):
         self.hh_parser(vacancy)
