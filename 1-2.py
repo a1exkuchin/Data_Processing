@@ -110,14 +110,19 @@ def get_news_yandex(_url):
         new = {}
  
         item = block.xpath(xpath_string_date)
-        string = str(get_value(item)).split()
+        value = str(get_value(item)).split()
 
-        #if string[0] == 'вчера':
-        #    d = datetime.today() - timedelta(days=1)
-        #    string = str(d).split()[0] + ' ' + string.split()[2]
-        #string = str(datetime.today()).split()[0] + ' ' + str(get_value(item))
-        #new['date'] = datetime.strptime(string,'%Y-%m-%d %H:%M')
-        new['date'] = datetime.today()
+        if len(value) == 1:
+            string = str(datetime.today()).split()[0] + ' ' + value[0]
+            new['date'] = datetime.strptime(string,'%Y-%m-%d %H:%M')
+        elif len(value) > 1:
+            if value[0] == 'вчера':
+                d = datetime.today() - timedelta(days=1)
+                string = str(d).split()[0] + ' ' + value[2]
+            else:
+                string = str(datetime.today()).split()[0][:-2] + value[0] + ' ' + value[3]
+
+        new['date'] = datetime.strptime(string,'%Y-%m-%d %H:%M')
     
         item = block.xpath(xpath_string_url)
         new['url'] = str(get_value(item))
