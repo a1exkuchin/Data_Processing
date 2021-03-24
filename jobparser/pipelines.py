@@ -39,7 +39,6 @@ class JobparserPipeline:
         
         collection = self.mongo_base[spider.name]
         collection.insert_one(vacancy_data)
-        print(vacancy_data)
         return vacancy_data
     
     
@@ -47,6 +46,9 @@ class JobparserPipeline:
         salary_min = None
         salary_max = None
         salary_currency = None
+        
+        for i in range(len(salary)):
+            salary[i] = salary[i].replace(u'\xa0', u'')
         if salary[0] == 'до':
             salary_max = salary[1]
             salary_currency = salary[-2]

@@ -9,8 +9,8 @@ class SuperjobRuSpider(scrapy.Spider):
 
     def parse(self, response):
         next_page = response.css('a.f-test-link-Dalshe::attr(href)').get()
-
-        yield response.follow(next_page, callback=self.parse)
+        if next_page:
+            yield response.follow(next_page, callback=self.parse)
 
         vacancy_items  = response.css('div.f-test-vacancy-item \
             a[class*=f-test-link][href^="/vakansii"]::attr(href)').getall()
@@ -25,7 +25,6 @@ class SuperjobRuSpider(scrapy.Spider):
         vacancy_link = response.url
 
         site_scraping = self.allowed_domains[0]
-        print(name, salary)
         yield JobparserItem(
             name=name,
             salary=salary, 
