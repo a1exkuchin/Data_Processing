@@ -38,7 +38,7 @@ class JobparserPipeline:
         }
         
         collection = self.mongo_base[spider.name]
-        collection.insert_one(vacancy_data)
+        collection.update_one(vacancy_data, {"$set": vacancy_data}, upsert=True)
         return vacancy_data
     
     
