@@ -13,6 +13,6 @@ if __name__ == '__main__':
     process = CrawlerProcess(settings=crawler_settings)
 
     process.crawl(HhRuSpider)
-    process.crawl(SuperjobRuSpider)
+    #process.crawl(SuperjobRuSpider)
 
     process.start()

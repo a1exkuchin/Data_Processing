@@ -3,16 +3,16 @@
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-
+from itemadapter import ItemAdapter
 from pymongo import MongoClient
 
-class JobParserPipeline(object):
-    def __init__(self):
-        MONGO_URI = 'localhost:27017'
-        MONGO_DATABASE = 'vacancy'
+MONGO_URL = 'localhost:27017'
+MONGO_DB = 'vacancy'
 
-        client = MongoClient(MONGO_URI)
-        self.mongo_base = client[MONGO_DATABASE]
+class JobparserPipeline:
+    def __init__(self):
+        self.client = MongoClient(MONGO_URL)
+        self.mongo_base = self.client[MONGO_DB]
 
     def process_item(self, item, spider):
         if spider.name == 'superjob_ru':
@@ -36,11 +36,13 @@ class JobParserPipeline(object):
             'vacancy_link': vacancy_link, 
             'site_scraping': site_scraping
         }
-
+        
         collection = self.mongo_base[spider.name]
         collection.insert_one(vacancy_data)
+        print(vacancy_data)
         return vacancy_data
-
+    
+    
     def salary_parse_hh(self, salary):
         salary_min = None
         salary_max = None
@@ -65,19 +67,21 @@ class JobParserPipeline(object):
 
         for i in range(len(salary)):
             salary[i] = salary[i].replace(u'\xa0', u'')
-
         if salary[0] == 'до':
-            salary_max = salary[2]
-        elif len(salary) == 3 and salary[0].isdigit():
+            salary_max = salary[2][:-4]
+            salary_currency = salary[2][-4:]
+        elif len(salary) == 5 and salary[0].isdigit():
             salary_max = salary[0]
         elif salary[0] == 'от':
-            salary_min = salary[2]
-        elif len(salary) > 3 and salary[0].isdigit():
+            salary_min = salary[2][:-4]
+            salary_currency = salary[2][-4:]
+        elif len(salary) > 5 and salary[0].isdigit():
             salary_min = salary[0]
-            salary_max = salary[2]
+            salary_max = salary[4]
+            salary_currency = salary[-3]
 
-        salary_currency = self.salary[-1]
+        return [salary_min, salary_max, salary_currency]
 
-        result = [salary_min, salary_max, salary_currency]
-        return result
+
+
 
