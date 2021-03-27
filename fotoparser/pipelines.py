@@ -41,6 +41,5 @@ class DataBasePipeline:
 
     def process_item(self, item, spider):
         collection = self.mongo_db[spider.name]
-        collection.insert_one(item)
         collection.update_one(item, {"$set": item}, upsert=True)
         return item
