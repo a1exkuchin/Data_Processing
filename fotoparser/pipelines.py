@@ -6,15 +6,12 @@
 
 # useful for handling different item types with a single interface
 import scrapy
-#from itemadapter import ItemAdapter
 from scrapy.pipelines.images import ImagesPipeline
 from pymongo import MongoClient
 
 
 class FotoparserPipeline(ImagesPipeline):
     def get_media_requests(self, item, info):
-        # print(item["photos"])
-        print(item)
         if item["photos"]:
             for photo_url in item['photos']:
                 try:
@@ -23,9 +20,6 @@ class FotoparserPipeline(ImagesPipeline):
                     print(e)
 
     def item_completed(self, results, item, info):
-
-        print(results)
-
         if results:
             item["photos"] = [itm[1] for itm in results]
         return item
@@ -34,7 +28,7 @@ class FotoparserPipeline(ImagesPipeline):
 class DataBasePipeline:
     def __init__(self):
         MONGO_URL = 'mongodb://127.0.0.1:27017/'
-        MONGO_DB = 'leroymerlin'
+        MONGO_DB = 'fotoparse'
 
         client = MongoClient(MONGO_URL)
         self.mongo_db = client[MONGO_DB]

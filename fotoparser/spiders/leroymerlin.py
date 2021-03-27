@@ -8,7 +8,9 @@ def parse_product(response: HtmlResponse):
     loader = ItemLoader(item=FotoparserItem(), response=response)
     loader.add_xpath("name", '//h1/text()')
     loader.add_xpath("photos", '//img[contains(@alt, "product image")]/@src')
-
+    loader.add_value('url', response.url)
+    loader.add_xpath("price", '//meta[@itemprop="price"]/@content')
+    loader.add_css('params', 'div.def-list__group ::text')
     yield loader.load_item()
 
 
@@ -24,4 +26,3 @@ class LeroymerlinSpider(scrapy.Spider):
         links = response.xpath("//product-card/@data-product-url")
         for link in links:
             yield response.follow(link, callback=parse_product)
-        pass

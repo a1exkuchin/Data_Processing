@@ -5,6 +5,7 @@ from fotoparser import settings
 from fotoparser.spiders.leroymerlin import LeroymerlinSpider
 from urllib.parse import quote_plus
 
+
 if __name__ == "__main__":
     crawler_settings = Settings()
     crawler_settings.setmodule(settings)
