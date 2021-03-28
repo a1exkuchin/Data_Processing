@@ -4,7 +4,7 @@
 # https://docs.scrapy.org/en/latest/topics/items.html
 
 import scrapy
-from scrapy.loader.processors import Compose, TakeFirst
+from scrapy.loader.processors import MapCompose, Compose, TakeFirst
 
 
 def parse_params(params):
@@ -14,7 +14,6 @@ def parse_params(params):
     for elem in array:
         key, value = elem.split('**')
         result[key] = value
-    print(result)
     return result
 
 class FotoparserItem(scrapy.Item):
@@ -23,4 +22,5 @@ class FotoparserItem(scrapy.Item):
     url = scrapy.Field(output_processor=TakeFirst())
     _id = scrapy.Field()
     params = scrapy.Field(output_processor=Compose(parse_params))
-    price = scrapy.Field(output_processor=TakeFirst())
+    price = scrapy.Field(input_processor=MapCompose(float), output_processor=TakeFirst())
+
