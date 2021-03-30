@@ -61,10 +61,9 @@ def get_data(obj):
 
     for block in blocks:
         row = {}
- 
         item = block.xpath(xpath_string_date)
         row['date'] = get_value(item)
-    
+
         item = block.xpath(xpath_string_url)
         row['url'] = 'https://vk.com' + get_value(item)
     
@@ -78,9 +77,6 @@ def get_data(obj):
         row['likes'] = get_likes(item)
         item = block.xpath(xpath_string_view)
         row['likes'].append(get_value(item))
-        #row['likes'] = zip(['like', 'share', 'view'], row['likes'])
-        #row[]
-
         data.append(row)
     print(f'Сollection data from {url} is over')
     return data
