@@ -1,14 +1,14 @@
-# import os
-import time
+﻿import time
 
 import requests
 from lxml import html
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait as wait
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 from pymongo import MongoClient
-from selenium.common import exceptions
-
 
 DRIVER_PATH = "./chromedriver"
 MONGO_URL = 'mongodb://127.0.0.1:27017/'
@@ -18,22 +18,12 @@ url = "https://vk.com/tokyofashion"
 options = Options()
 options.add_argument("--start-maximized")
 
-
 def post_search(odject, string):
     search_input = odject.find_element_by_xpath('//a[contains(@class, "search")]')
     search_input.click()
     search_input = odject.find_element_by_id("wall_search")
     search_input.send_keys(string)
     search_input.send_keys(Keys.ENTER)
-
-
-def get_parsing_data(url): 
-    headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
-            (KHTML, like Gecko) Chrome/88.0.4324.190 Safari/537.36"
-    }
-    r = requests.get(url, headers = headers)
-    obj = html.fromstring(r.text)
-    return obj
 
 
 def get_value(elems):
@@ -57,8 +47,7 @@ def get_likes(elems):
         result.append('0')
     return result
 
-def get_data(url):
-
+def get_data(obj):
     data = []
     xpath_string_main = '//div[contains(@class, "post--with-likes")]'
     xpath_string_likes = './/div[contains(@class, "wall-")]//a/div/text()'
@@ -68,7 +57,7 @@ def get_data(url):
     xpath_string_photo = './/a[contains(@aria-label, "фотография")]/@style'
     xpath_string_url = './/a[contains(@class, "post_link")]/@href'
 
-    blocks = get_parsing_data(url).xpath(xpath_string_main)
+    blocks = obj.xpath(xpath_string_main)
 
     for block in blocks:
         row = {}
@@ -96,25 +85,42 @@ def get_data(url):
     print(f'Сollection data from {url} is over')
     return data
 
-#driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
-#driver.get(url)
+driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
+driver.get(url)
 
-#post_search(driver, "Джиу")
-#time.sleep(3)
+# Поиск по постам
+# post_search(driver, "Джиу")
+# time.sleep(3)
 
- 
-   
-#while True:
-#    try:
-        # collection.insert_one()
-#        pass
-#    except exceptions.TimeoutException:
-#        print('are over')
-#        break
+time.sleep(1.5)  
+scroll_pause = 1 
+screen_height = driver.execute_script("return window.screen.height;") 
+i = 1
 
-#driver.quit()
+# крутим скролл и ждем всплывающего окна
+while True:
+    driver.execute_script(f'window.scrollTo(0, {screen_height}*{i});')  
+    i += 1
+    time.sleep(scroll_pause)
+    scroll_height = driver.execute_script('return document.body.scrollHeight;') 
 
-parse_data = get_data(url)
+    #if screen_height * i > scroll_height:
+    if i == 3:
+        break 
+wait(driver, 1).until(EC.element_to_be_clickable((By.CLASS_NAME, "JoinForm__notNow"))).click()
+
+# крутим скролл дальше
+while True:
+    driver.execute_script(f'window.scrollTo(0, {screen_height}*{i});')  
+    i += 1
+    time.sleep(scroll_pause)
+    scroll_height = driver.execute_script('return document.body.scrollHeight;') 
+    # можно крутить скролл до конца
+    #if screen_height * i > scroll_height:
+    if i == 50:
+        break 
+
+parse_data = get_data(html.fromstring(driver.page_source))
 
 with MongoClient(MONGO_URL) as client:
     db = client[MONGO_DB]
@@ -122,4 +128,5 @@ with MongoClient(MONGO_URL) as client:
     collection.insert_many(parse_data)
     print('Data added into the database')
     
+driver.quit()
 
