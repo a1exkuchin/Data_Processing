@@ -1,9 +1,9 @@
-import scrapy
-from scrapy.http import HtmlResponse
 import re
 import json
 from urllib.parse import quote
 from copy import deepcopy
+import scrapy
+from scrapy.http import HtmlResponse
 from instaparser.items import InstaparserItem
 
 
@@ -11,13 +11,15 @@ class InstagramSpider(scrapy.Spider):
     name = 'instagram'
     allowed_domains = ['instagram.com']
     start_urls = ['https://www.instagram.com/']
-    username = "dedparser"
-    enc_password = "#PWD_INSTAGRAM_BROWSER:10:1616865878:AZlQADP6pk/5VnFe5bKuY6T9kfTDmBUXYn9qdQB7m7meM6h2CgQb4HSz0pHmNBOnRMjPK0Ahzgub9y7qT+cttle277sc8E7/1xPlM1SnjAw+nGDpITS23K3IzDB1G1Sqz+IOdnnaLmTfNAZu/nojpEw="
+    username = "alex_purge"
+    enc_password = "#PWD_INSTAGRAM_BROWSER:10:1617601812:AddQALu+1y37na17eFJHQX+PYFjUltEbMpC5FQS/Et0u+Ml4wyOW988z+1bRLuYYD9iit41yXfmL/K0OIRM+nUsV9fGCXh4o6VCYmQ07G9/S47wHqm/YqJWE84apQCn6SEz3LmXrTqvST+U3So14xnc="
     login_url = "https://www.instagram.com/accounts/login/ajax/"
-    user_to_scrape = "ai_machine_learning"
+    #users = input('Input users to scrape separated by spaces: ').split()
+    user_to_scrape = "chernyshov0503"
 
     graphql_url = 'https://www.instagram.com/graphql/query/?'
-    posts_hash = '003056d32c2554def87228bc3fd9668a'
+    followers_hash = '5aefa9893005572d237da5068082d8d5'
+    subscriptions_hash = '3dec7e2c57367ef3da3d987d89f9dbc8'
 
     def parse(self, response: HtmlResponse):
         yield scrapy.FormRequest(
@@ -39,15 +41,27 @@ class InstagramSpider(scrapy.Spider):
                 cb_kwargs={"username": self.user_to_scrape}
             )
 
+
     def user_data_parse(self, response: HtmlResponse, username):
         user_id = self.fetch_user_id(response.text, username)
         variables = {"id": user_id, "first": 12}
-        # сравните с оригинальной строкой из запроса от сайта
         str_variables = quote(str(variables).replace(" ", "").replace("'", '"'))
-        url = self.graphql_url + f"query_hash={self.posts_hash}&variables={str_variables}"
+        url = self.graphql_url + \
+            f"query_hash={self.subscriptions_hash}&variables={str_variables}"
         yield response.follow(
             url,
-            callback=self.parse_posts,
+            callback=self.parse_subscriptions,
+            cb_kwargs={
+                "username": username,
+                "user_id": user_id,
+                "variables": deepcopy(variables)
+            },
+        )
+        url = self.graphql_url + \
+            f"query_hash={self.followers_hash}&variables={str_variables}"
+        yield response.follow(
+            url,
+            callback=self.parse_followers,
             cb_kwargs={
                 "username": username,
                 "user_id": user_id,
@@ -55,36 +69,68 @@ class InstagramSpider(scrapy.Spider):
             },
         )
 
- 
-    def parse_posts(self, response: HtmlResponse, username, user_id, variables):
+
+    def parse_followers(self, response: HtmlResponse, username, user_id, variables):
         data = response.json()
-        data = data["data"]["user"]["edge_owner_to_timeline_media"]
+        data = data["data"]["user"]["edge_followed_by"]
         page_info = data.get("page_info", None)
         if page_info["has_next_page"]:
             variables["after"] = page_info["end_cursor"]
-            # сравните с оригинальной строкой из запроса от сайта
             str_variables = quote(str(variables).replace(" ", "").replace("'", '"'))
-            url = self.graphql_url + f"query_hash={self.posts_hash}&variables={str_variables}"
+            url = self.graphql_url + \
+                f"query_hash={self.followers_hash}&variables={str_variables}"
             yield response.follow(
                 url,
-                callback=self.parse_posts,
+                callback=self.parse_followers,
                 cb_kwargs={
                     "username": username,
                     "user_id": user_id,
                     "variables": deepcopy(variables)
                 }
             )
-
         posts = data["edges"]
         for post in posts:
             tmp = post["node"]
             item = InstaparserItem(
-                user_id=user_id,
-                photo=tmp["display_url"],
-                likes=tmp["edge_media_preview_like"]["count"],
-                post_data=tmp
+                user=self.user_to_scrape,
+                follower=True,
+                user_id=tmp["id"],
+                photo=tmp["profile_pic_url"],
+                name=tmp["full_name"],
             )
             yield item
+
+    def parse_subscriptions(self, response: HtmlResponse, username, user_id, variables):
+        data = response.json()
+        data = data["data"]["user"]["edge_follow"]
+        page_info = data.get("page_info", None)
+        if page_info["has_next_page"]:
+            variables["after"] = page_info["end_cursor"]
+            str_variables = quote(str(variables).replace(" ", "").replace("'", '"'))
+            url = self.graphql_url + \
+                f"query_hash={self.subscriptions_hash}&variables={str_variables}"
+            print(url)
+            yield response.follow(
+                url,
+                callback=self.parse_subscriptions,
+                cb_kwargs={
+                    "username": username,
+                    "user_id": user_id,
+                    "variables": deepcopy(variables)
+                }
+            )
+        rows = data["edges"]
+        for row in rows:
+            tmp = row["node"]
+            item = InstaparserItem(
+                user=self.user_to_scrape,
+                subs=True,
+                user_id=tmp["id"],
+                photo=tmp["profile_pic_url"],
+                name=tmp["full_name"],
+            )
+            yield item
+
 
     # Получаем токен для авторизации
     def fetch_csrf_token(self, text):

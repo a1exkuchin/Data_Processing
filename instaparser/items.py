@@ -8,8 +8,9 @@ import scrapy
 
 class InstaparserItem(scrapy.Item):
     # define the fields for your item here like:
+    user = scrapy.Field()
+    subs = scrapy.Field()
+    follower = scrapy.Field()
     user_id = scrapy.Field()
     photo = scrapy.Field()
-    likes = scrapy.Field()
-    post_data = scrapy.Field()
-
+    name = scrapy.Field()
