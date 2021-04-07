@@ -1,10 +1,9 @@
-from pymongo import MongoClient
+﻿from pymongo import MongoClient
 from prettytable import PrettyTable
 
 MONGO_URI = "127.0.0.1:27017"
 MONGO_DB = "socialnet"
 
-#user_for_scrape = "chernyshov0503"
 
 def is_exists(name_tags, field):
     return bool(collection.find_one({name_tags: { "$in": [field]}}))
