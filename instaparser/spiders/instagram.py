@@ -1,5 +1,7 @@
-﻿import re
+import re
 import json
+import os
+from dotenv import load_dotenv
 from urllib.parse import quote
 from copy import deepcopy
 import scrapy
@@ -11,12 +13,10 @@ class InstagramSpider(scrapy.Spider):
     name = 'instagram'
     allowed_domains = ['instagram.com']
     start_urls = ['https://www.instagram.com/']
-    username = ""
-    enc_password = ""
+    load_dotenv()
+    username = os.getenv("username")
+    enc_password = os.getenv("enc_password")
     login_url = "https://www.instagram.com/accounts/login/ajax/"
-    #users = input('Input users to scrape separated by spaces: ').split()
-    user_to_scrape = "chernyshov0503"
-
     graphql_url = 'https://www.instagram.com/graphql/query/?'
     followers_hash = '5aefa9893005572d237da5068082d8d5'
     subscriptions_hash = '3dec7e2c57367ef3da3d987d89f9dbc8'
@@ -32,14 +32,16 @@ class InstagramSpider(scrapy.Spider):
 
     def user_login(self, response: HtmlResponse):
         json_data = response.json()
+        users = input('Введите имена пользователей, разделенные пробелами: ').split()
         if json_data["user"] and json_data["authenticated"]:
-            self.user_id = json_data["userId"]
-            user_to_scrape_url = f"/{self.user_to_scrape}"
-            yield response.follow(
-                user_to_scrape_url,
-                callback=self.user_data_parse,
-                cb_kwargs={"username": self.user_to_scrape}
-            )
+            for self.user_to_scrape in users: 
+                self.user_id = json_data["userId"]
+                user_to_scrape_url = f"/{self.user_to_scrape}"
+                yield response.follow(
+                    user_to_scrape_url,
+                    callback=self.user_data_parse,
+                    cb_kwargs={"username": self.user_to_scrape}
+                    )
 
 
     def user_data_parse(self, response: HtmlResponse, username):
@@ -92,7 +94,7 @@ class InstagramSpider(scrapy.Spider):
         for post in posts:
             tmp = post["node"]
             item = InstaparserItem(
-                user=self.user_to_scrape,
+                user=username,
                 follower=True,
                 user_id=tmp["id"],
                 photo=tmp["profile_pic_url"],
@@ -123,7 +125,7 @@ class InstagramSpider(scrapy.Spider):
         for row in rows:
             tmp = row["node"]
             item = InstaparserItem(
-                user=self.user_to_scrape,
+                user=username,
                 subs=True,
                 user_id=tmp["id"],
                 photo=tmp["profile_pic_url"],
