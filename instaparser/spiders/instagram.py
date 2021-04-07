@@ -1,4 +1,4 @@
-import re
+﻿import re
 import json
 from urllib.parse import quote
 from copy import deepcopy
@@ -11,8 +11,8 @@ class InstagramSpider(scrapy.Spider):
     name = 'instagram'
     allowed_domains = ['instagram.com']
     start_urls = ['https://www.instagram.com/']
-    username = "alex_purge"
-    enc_password = "#PWD_INSTAGRAM_BROWSER:10:1617601812:AddQALu+1y37na17eFJHQX+PYFjUltEbMpC5FQS/Et0u+Ml4wyOW988z+1bRLuYYD9iit41yXfmL/K0OIRM+nUsV9fGCXh4o6VCYmQ07G9/S47wHqm/YqJWE84apQCn6SEz3LmXrTqvST+U3So14xnc="
+    username = ""
+    enc_password = ""
     login_url = "https://www.instagram.com/accounts/login/ajax/"
     #users = input('Input users to scrape separated by spaces: ').split()
     user_to_scrape = "chernyshov0503"
